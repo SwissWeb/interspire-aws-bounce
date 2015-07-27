@@ -146,7 +146,7 @@ return [
 
         Aws\Laravel\AwsServiceProvider::class,
         Aglipanci\Interspire\InterspireServiceProvider::class,
-        Spatie\ResponseCache\ResponseCacheServiceProvider::class,
+        //Spatie\ResponseCache\ResponseCacheServiceProvider::class,
 
     ],
 

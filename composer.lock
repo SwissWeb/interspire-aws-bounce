@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "b1d081777199b56b562898330f95cbe7",
+    "hash": "d67d16321b7973fdfcfc059525f22cc1",
     "packages": [
         {
             "name": "aws/aws-sdk-php",
@@ -1292,65 +1292,6 @@
                 "shell"
             ],
             "time": "2015-07-16 15:26:57"
-        },
-        {
-            "name": "spatie/laravel-responsecache",
-            "version": "1.1.2",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/spatie/laravel-responsecache.git",
-                "reference": "823b8ece28cbf156ee1f8dbe52ee946598b1ee68"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/spatie/laravel-responsecache/zipball/823b8ece28cbf156ee1f8dbe52ee946598b1ee68",
-                "reference": "823b8ece28cbf156ee1f8dbe52ee946598b1ee68",
-                "shasum": ""
-            },
-            "require": {
-                "illuminate/cache": "^5.1",
-                "illuminate/config": "^5.1",
-                "illuminate/console": "^5.1",
-                "illuminate/http": "^5.1",
-                "illuminate/support": "^5.1",
-                "nesbot/carbon": "~1.19",
-                "php": ">=5.5.0"
-            },
-            "require-dev": {
-                "mockery/mockery": "^0.9.4",
-                "orchestra/testbench": "^3.0",
-                "phpunit/phpunit": "^4",
-                "scrutinizer/ocular": "^1.1"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "Spatie\\ResponseCache\\": "src"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Freek Van der Herten",
-                    "email": "freek@spatie.be",
-                    "homepage": "https://spatie.be",
-                    "role": "Developer"
-                }
-            ],
-            "description": "Speed up a Laravel application by caching the entire response",
-            "homepage": "https://github.com/spatie/laravel-responsecache",
-            "keywords": [
-                "cache",
-                "laravel",
-                "laravel-responsecache",
-                "performance",
-                "response",
-                "spatie"
-            ],
-            "time": "2015-07-22 16:38:20"
         },
         {
             "name": "swiftmailer/swiftmailer",
