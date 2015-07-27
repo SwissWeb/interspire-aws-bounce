@@ -56,8 +56,7 @@ class ComplaintsController extends Controller
         if (!is_null($messages))
             $this->handleMessages($messages);
 
-        echo 'OK';
-        exit;
+        return 'Complaints processed successfully';
     }
 
     /**

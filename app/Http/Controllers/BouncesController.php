@@ -55,8 +55,7 @@ class BouncesController extends Controller
         if (!is_null($messages))
             $this->handleMessages($messages);
 
-        echo 'OK';
-        exit; // we're done !
+        return 'Complaints processed successfully';
     }
 
     /**
