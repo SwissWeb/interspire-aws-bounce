@@ -59,3 +59,15 @@ or run :
 ```
 $ php artisan complaints:process
 ```
+
+If you run the artisan command, you will get debug outputs. Ex:
+```
+Complaints are being processed
+-> Amazon SQS pulling message(s)
+-> Message(s) received
+  - Start handling message(s) received
+  - ban recipient1@example.com says : Already in the suppression list
+  - Email not subscribed to any list
+-> Amazon SQS pulling message(s)
+Complaints processed successfully
+```
