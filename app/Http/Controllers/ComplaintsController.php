@@ -9,7 +9,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\App;
 
 use Aglipanci\Interspire\Interspire;
-use Aws\Sdk;
+use App\Services\Sqs;
 use Log;
 
 class ComplaintsController extends Controller
@@ -21,14 +21,9 @@ class ComplaintsController extends Controller
     private $interspire;
 
     /**
-     * @var Sdk
+     * @var Sqs
      */
-    private $sdk;
-
-    /**
-     * @var SqsClient
-     */
-    private $sqsClient;
+    private $sqs;
 
     /**
      * @var string|null
@@ -36,26 +31,19 @@ class ComplaintsController extends Controller
     private $complaintsSqsUrl;
 
 
-    public function __construct(Sdk $sdk, Interspire $interspire)
+    /**
+     * @param Sqs $sqs
+     * @param Interspire $interspire
+     */
+    public function __construct(Sqs $sqs, Interspire $interspire)
     {
-        $this->sdk = $sdk;
-        $this->interspire = $interspire;
-
-        if (is_null(env('AWS_ACCESS_KEY_ID', null)))
-            abort(403, 'AWS_ACCESS_KEY_ID is not set in .env file');
-
-        if (is_null(env('AWS_SECRET_ACCESS_KEY', null)))
-            abort(403, 'AWS_SECRET_ACCESS_KEY is not set in .env file');
-
-        if (is_null(env('AWS_REGION', null)))
-            abort(403, 'AWS_REGION is not set in .env file');
-
-        $this->sqsClient = $this->sdk->createClient('sqs');
         $this->complaintsSqsUrl = env('COMPLAINTS_SQS_URL', null);
 
         if (is_null($this->complaintsSqsUrl))
             abort(403, 'COMPLAINTS_SQS_URL is not set in .env file');
 
+        $this->sqs = $sqs;
+        $this->interspire = $interspire;
     }
 
     /**
@@ -63,29 +51,14 @@ class ComplaintsController extends Controller
      */
     public function process()
     {
-        $messages = $this->receiveMessages();
+        $messages = $this->sqs->receiveMessages($this->complaintsSqsUrl);
 
         if (!is_null($messages))
             $this->handleMessages($messages);
 
+        echo 'OK';
         exit;
     }
-
-    /**
-     * get SQS messages
-     *
-     * @return array
-     */
-    private function receiveMessages()
-    {
-        $data = $this->sqsClient->receiveMessage([
-            'QueueUrl' => $this->complaintsSqsUrl,
-            'MaxNumberOfMessages' => 1,
-        ]);
-
-        return $data->search('Messages');
-    }
-
 
     /**
      * @TODO handle loop better
@@ -96,42 +69,49 @@ class ComplaintsController extends Controller
         foreach ($messages as $message) {
             $complaints = json_decode($message['Body']);
 
-            foreach ($complaints->complaint->complainedRecipients as $complaint) {
-                $this->cleanRecipient($complaint->emailAddress);
+            foreach ($complaints->complaint->complainedRecipients as $recipient) {
+                $email = $recipient->emailAddress;
+                $this->removeRecipient($email);
+
+                $listids = $this->interspire->getAllListsForEmailAddress($email);
+                // if the email is not in any list, we skip
+                if (is_null($listids))
+                    continue;
+
+                // CAREFUL !!! we want to unsubscribe this email in ALL lists, you might want to change this
+                foreach ($listids as $listid) {
+                    $this->unsubscribeRecipient($email, $listid);
+                }
             }
 
-            $this->deleteMessage($message['ReceiptHandle']);
+            $this->sqs->deleteMessage($this->complaintsSqsUrl, $message['ReceiptHandle']);
         }
 
-        // kinda dirty loop
-        if (!is_null($this->receiveMessages()))
-            $this->process();
+        // kinda dirty loop ???
+        $this->process();
     }
 
     /**
-     * Delete a SQS message
+     * Ban recipient globally
      *
-     * @param $ReceiptHandle
+     * @param string $email
+     * @param int|string $listid
      */
-    private function deleteMessage($ReceiptHandle)
+    private function removeRecipient($email, $listid = 'global')
     {
-        $this->sqsClient->deleteMessage([
-            'QueueUrl' => $this->complaintsSqsUrl,
-            'ReceiptHandle' => $ReceiptHandle,
-        ]);
+        $result = $this->interspire->addBannedSubscriber($email, $listid);
+        Log::info('COMPLAINT // ' . $email . ' BAN : ' . $result);
     }
 
     /**
-     * Remove recipient from mailing lists
+     * Ubsubscribe recipient from ALL mailing lists
      *
-     * @param $recipient
+     * @param string $email
+     * @param int $listid
      */
-    private function cleanRecipient($recipient)
+    private function unsubscribeRecipient($email, $listid = 1)
     {
-        $ban = $this->interspire->addBannedSubscriber($recipient);
-        Log::info('COMPLAINT // ' . $recipient . ' : ' . $ban);
-
-        $unsub = $this->interspire->unsubscribeSubscriber($recipient);
-        Log::info('UNSUB // ' . $recipient . ' : ' . $unsub);
+        $result = $this->interspire->unsubscribeSubscriber($email, $listid);
+        Log::info('COMPLAINT // ' . $email . ' UNSUB : '.$result);
     }
 }

@@ -9,7 +9,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\App;
 
 use Aglipanci\Interspire\Interspire;
-use Aws\Sdk;
+use App\Services\Sqs;
 use Log;
 
 class BouncesController extends Controller
@@ -21,42 +21,28 @@ class BouncesController extends Controller
     private $interspire;
 
     /**
-     * @var Sdk
+     * @var Sqs
      */
-    private $sdk;
-
-    /**
-     * @var SqsClient
-     */
-    private $sqsClient;
+    private $sqs;
 
     /**
      * @var string|null
      */
     private $bouncesSqsUrl;
 
-
-
-    public function __construct(Sdk $sdk, Interspire $interspire)
+    /**
+     * @param Sqs $sqs
+     * @param Interspire $interspire
+     */
+    public function __construct(Sqs $sqs, Interspire $interspire)
     {
-        $this->sdk = $sdk;
-        $this->interspire = $interspire;
-
-        if(is_null(env('AWS_ACCESS_KEY_ID', null)))
-            abort(403, 'AWS_ACCESS_KEY_ID is not set in .env file');
-
-        if(is_null(env('AWS_SECRET_ACCESS_KEY', null)))
-            abort(403, 'AWS_SECRET_ACCESS_KEY is not set in .env file');
-
-        if(is_null(env('AWS_REGION', null)))
-            abort(403, 'AWS_REGION is not set in .env file');
-
-        $this->sqsClient = $this->sdk->createClient('sqs');
         $this->bouncesSqsUrl = env('BOUNCES_SQS_URL', null);
 
-        if(is_null($this->bouncesSqsUrl))
+        if (is_null($this->bouncesSqsUrl))
             abort(403, 'BOUNCES_SQS_URL is not set in .env file');
 
+        $this->interspire = $interspire;
+        $this->sqs = $sqs;
     }
 
     /**
@@ -64,12 +50,13 @@ class BouncesController extends Controller
      */
     public function process()
     {
-        $messages = $this->receiveMessages();
+        $messages = $this->sqs->receiveMessages($this->bouncesSqsUrl);
 
-        if(!is_null($messages))
+        if (!is_null($messages))
             $this->handleMessages($messages);
 
-        exit;
+        echo 'OK';
+        exit; // we're done !
     }
 
     /**
@@ -78,11 +65,12 @@ class BouncesController extends Controller
      */
     private function handleMessages($messages)
     {
-        foreach($messages as $message) {
+        foreach ($messages as $message) {
+
             $bounce = json_decode($message['Body']);
 
-            switch ($bounce->bounce->bounceType)
-            {
+            switch ($bounce->bounce->bounceType) {
+
                 // A transient bounce indicates that the recipient's ISP is not accepting messages for that
                 // particular recipient at that time and you can retry delivery in the future.
                 case "Transient" :
@@ -91,19 +79,28 @@ class BouncesController extends Controller
 
                 // Remove all recipients that generated a permanent bounce or an unknown bounce.
                 default:
-                    foreach($bounce->bounce->bouncedRecipients as $recipient)
-                    {
-                        $this->cleanRecipient($recipient->emailAddress);
+                    foreach ($bounce->bounce->bouncedRecipients as $recipient) {
+                        $email = $recipient->emailAddress;
+                        $listids = $this->interspire->getAllListsForEmailAddress($email);
+
+                        // if the email is not in any list, we skip
+                        if (is_null($listids))
+                            continue;
+
+                        // CAREFUL !!! we want to bounce this email in ALL lists, you might want to change this
+                        foreach ($listids as $listid) {
+                            $this->bounceRecipient($email, $listid);
+                        }
                     }
                     break;
             }
 
-            $this->deleteMessage($message['ReceiptHandle']);
+            // done with message so we delete it from queue
+            $this->sqs->deleteMessage($this->bouncesSqsUrl, $message['ReceiptHandle']);
         }
 
-        // kinda dirty
-        if(!is_null($this->receiveMessages()))
-            $this->process();
+        // kinda dirty loop ???
+        $this->process();
     }
 
     /**
@@ -117,48 +114,16 @@ class BouncesController extends Controller
         Log::warning(json_encode($bounce));
     }
 
-    /**
-     * get SQS messages
-     *
-     * @return array
-     */
-    private function receiveMessages()
-    {
-        $data = $this->sqsClient->receiveMessage([
-            'QueueUrl' => $this->bouncesSqsUrl,
-            'MaxNumberOfMessages' => 1,
-        ]);
-        return $data->search('Messages');
-    }
 
     /**
-     * Delete a SQS message
+     * Mark recipient as bounced in mailing lists
      *
-     * @param $ReceiptHandle
+     * @param string $email
+     * @param int $listid
      */
-    private function deleteMessage($ReceiptHandle)
+    private function bounceRecipient($email, $listid = 1)
     {
-        $this->sqsClient->deleteMessage([
-            'QueueUrl' => $this->bouncesSqsUrl,
-            'ReceiptHandle' => $ReceiptHandle,
-        ]);
+        $result = $this->interspire->bounceSubscriber($email, $listid);
+        Log::info('BOUNCE // ' . $email . ' : ' . $result);
     }
-
-    /**
-     * Remove recipient from mailing lists
-     *
-     * @param $recipient
-     */
-    private function cleanRecipient($recipient)
-    {
-        $result = $this->interspire->bounceSubscriber($recipient);
-        Log::info('BOUNCE // '.$recipient.' : '.$result);
-        echo 'BOUNCE // '.$recipient.' : '.$result;
-    }
-
-//    public function getAllListsForEmailAddress($recipient = 'jl.allemann@gmail.com')
-//    {
-//        $result = $this->interspire->getAllListsForEmailAddress($recipient);
-//        dd($result);
-//    }
 }
