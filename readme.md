@@ -3,11 +3,9 @@
 [![Deployment status from DeployBot](https://sws.deploybot.com/badge/02267417959608/39353.svg)](http://deploybot.com)
 
 This is a work in progress. The aim is to have a Laravel 5.1 app running in front of Interspire.
-Our Interspire uses Amazon SES to send emails. We set up Amazon SNS notifications in a SQS queues. 
-The app then queries the queues to see if there are any complaints/bounces. If so they are handled.
+We uses Amazon SES to process Interspire emails. We have set up Amazon SNS notifications for complaints/bounces. These are pushed to Amazon SQS queues. 
 
-It uses the API to communicate with Interspire. See this package :
-https://github.com/SwissWeb/laravel-interspire
+The app queries the queues to see if there are any complaints/bounces. If so they are handled with Interspire's API. See this package : https://github.com/SwissWeb/laravel-interspire
 
 ## Installation
 ###To install laravel
@@ -17,12 +15,12 @@ $ git clone https://github.com/SwissWeb/interspire-aws-bounce.git
 ```
 
 Run composer
-```
+```php
 $ composer update
 ```
 
 Copy .env.example to .env and edit it :
-```
+```php
 $ cp .env.example .env
 ```
 
@@ -42,11 +40,11 @@ For complaints
 ###Usage
 #####To process bounces :
 Go to 
-```
+```http
 http://example.com/bounces/process
 ```
 or run
-```
+```php
 $ php artisan bounces:process
 ```
 
@@ -56,18 +54,24 @@ Go to :
 http://example.com/complaints/process
 ```
 or run :
-```
+```php
 $ php artisan complaints:process
 ```
 
 If you run the artisan command, you will get debug outputs. Ex:
 ```
-Complaints are being processed
+Bounces are being processed
 -> Amazon SQS pulling message(s)
 -> Message(s) received
   - Start handling message(s) received
-  - ban recipient1@example.com says : Already in the suppression list
-  - Email not subscribed to any list
+  - recipient1@example.com not subscribed to any list
+  - recipient2@example.com not subscribed to any list
 -> Amazon SQS pulling message(s)
-Complaints processed successfully
+Complaints processed. Bybye!
+```
+
+Or an error like :
+```php
+  [Symfony\Component\HttpKernel\Exception\HttpException]
+  COMPLAINTS_SQS_URL is not set in .env file
 ```
