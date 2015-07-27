@@ -1,27 +1,40 @@
-## Laravel PHP Framework
+## Laravel 5.1 app that manages bounces/complaints from Amazon SES/SNS/SQS and Interspire API
 
-[![Build Status](https://travis-ci.org/laravel/framework.svg)](https://travis-ci.org/laravel/framework)
-[![Total Downloads](https://poser.pugx.org/laravel/framework/d/total.svg)](https://packagist.org/packages/laravel/framework)
-[![Latest Stable Version](https://poser.pugx.org/laravel/framework/v/stable.svg)](https://packagist.org/packages/laravel/framework)
-[![Latest Unstable Version](https://poser.pugx.org/laravel/framework/v/unstable.svg)](https://packagist.org/packages/laravel/framework)
-[![License](https://poser.pugx.org/laravel/framework/license.svg)](https://packagist.org/packages/laravel/framework)
+[![Deployment status from DeployBot](https://sws.deploybot.com/badge/02267417959608/39353.svg)](http://deploybot.com)
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable, creative experience to be truly fulfilling. Laravel attempts to take the pain out of development by easing common tasks used in the majority of web projects, such as authentication, routing, sessions, queueing, and caching.
+This is a work in progress. The aim is to have a Laravel 5.1 app running in front of Interspire.
+Our Interspire uses Amazon SES to send emails. We set up Amazon SNS notifications in a SQS queues. 
+The app then queries the queues to see if there are any complaints/bounces. If so they are handled.
 
-Laravel is accessible, yet powerful, providing powerful tools needed for large, robust applications. A superb inversion of control container, expressive migration system, and tightly integrated unit testing support give you the tools you need to build any application with which you are tasked.
+It uses the API to communicate with Interspire. See this package :
+https://github.com/SwissWeb/laravel-interspire
 
-## Official Documentation
+## Installation
+###To install laravel
+Just clone this project
+```
+$ git clone https://github.com/SwissWeb/interspire-aws-bounce.git
+```
 
-Documentation for the framework can be found on the [Laravel website](http://laravel.com/docs).
+Run composer
+```
+$ composer update
+```
 
-## Contributing
+Copy .env.example to .env and edit it :
+```
+$ cp .env.example .env
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](http://laravel.com/docs/contributions).
+###To setup the AWS stuff here are hints :
+For bounces
+* Create an Amazon SQS queue named ses-bounces-queue.
+* Create an Amazon SNS topic named ses-bounces-topic.
+* Configure the Amazon SNS topic to publish to the SQS queue.
+* Configure Amazon SES to publish bounce notifications using ses-bounces-topic to ses-bounces-queue.
 
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell at taylor@laravel.com. All security vulnerabilities will be promptly addressed.
-
-### License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](http://opensource.org/licenses/MIT)
+For complaints
+* Create an Amazon SQS queue named ses-complaints-queue.
+* Create an Amazon SNS topic named ses-complaints-topic.
+* Configure the Amazon SNS topic to publish to the SQS queue.
+* Configure Amazon SES to publish complaint notifications using ses-complaints-topic to ses-complaints-queue.
