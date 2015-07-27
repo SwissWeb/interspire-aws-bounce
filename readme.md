@@ -5,7 +5,7 @@
 This is a work in progress. The aim is to have a Laravel 5.1 app running in front of Interspire.
 We uses Amazon SES to process Interspire emails. We have set up Amazon SNS notifications for complaints/bounces. These are pushed to Amazon SQS queues. 
 
-The app queries the queues to see if there are any complaints/bounces. If so they are handled with Interspire's API. See this package : https://github.com/SwissWeb/laravel-interspire
+The app queries the queues to see if there are any complaints/bounces. If so they are handled with Interspire's API. Bounces will be tagged as `Bounced` and complaints will be `Unbsuscribed` and addes to the `Suppression list` in Interspire. See this package for more info : https://github.com/SwissWeb/laravel-interspire
 
 ## Installation
 ###To install laravel
