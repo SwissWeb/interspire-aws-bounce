@@ -12,7 +12,8 @@
 */
 
 Route::get('/', function () {
-    abort(403, 'Access denied');
+//    abort(403, 'Access denied');
+    return view('welcome');
 });
 
 Route::get('bounces/process', 'BouncesController@process');
