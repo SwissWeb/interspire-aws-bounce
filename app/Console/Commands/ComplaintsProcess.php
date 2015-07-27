@@ -44,8 +44,8 @@ class ComplaintsProcess extends Command
      */
     public function handle()
     {
-        $this->info('Complaints are being processed');
+        $this->comment('Complaints are being processed');
         $response = $this->complaintsController->process();
-        $this->comment($response);
+        $this->info($response);
     }
 }

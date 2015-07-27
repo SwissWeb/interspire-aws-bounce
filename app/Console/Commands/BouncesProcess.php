@@ -44,8 +44,8 @@ class BouncesProcess extends Command
      */
     public function handle()
     {
-        $this->info('Bounces are being processed');
+        $this->comment('Bounces are being processed');
         $response = $this->bouncesController->process();
-        $this->comment($response);
+        $this->info($response);
     }
 }

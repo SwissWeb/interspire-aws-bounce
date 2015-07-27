@@ -50,12 +50,15 @@ class BouncesController extends Controller
      */
     public function process()
     {
+        echo '-> Amazon SQS pulling message(s)' . PHP_EOL;
         $messages = $this->sqs->receiveMessages($this->bouncesSqsUrl);
 
-        if (!is_null($messages))
+        if (!is_null($messages)) {
+            echo '-> Message(s) received' . PHP_EOL;
             $this->handleMessages($messages);
+        }
 
-        return 'Complaints processed successfully';
+        return 'Complaints processed. Bybye!';
     }
 
     /**
@@ -64,12 +67,12 @@ class BouncesController extends Controller
      */
     private function handleMessages($messages)
     {
-        foreach ($messages as $message) {
+        echo '  - Start handling message(s) received' . PHP_EOL;
 
+        foreach ($messages as $message) {
             $bounce = json_decode($message['Body']);
 
             switch ($bounce->bounce->bounceType) {
-
                 // A transient bounce indicates that the recipient's ISP is not accepting messages for that
                 // particular recipient at that time and you can retry delivery in the future.
                 case "Transient" :
@@ -83,8 +86,10 @@ class BouncesController extends Controller
                         $listids = $this->interspire->getAllListsForEmailAddress($email);
 
                         // if the email is not in any list, we skip
-                        if (is_null($listids))
+                        if (is_null($listids)) {
+                            echo '  - ' . $email . ' not subscribed to any list' . PHP_EOL;
                             continue;
+                        }
 
                         // CAREFUL !!! we want to bounce this email in ALL lists, you might want to change this
                         foreach ($listids as $listid) {
@@ -111,12 +116,13 @@ class BouncesController extends Controller
     private function manuallyReviewBounce($bounce)
     {
         Log::warning(json_encode($bounce));
+        echo '  - a bounce has to be reviewed manually, check logs!' . PHP_EOL;
     }
-
 
     /**
      * Mark recipient as bounced in mailing lists
      *
+     * @TODO Log DSN (http://docs.aws.amazon.com/ses/latest/DeveloperGuide/notification-examples.html#notification-examples-bounce)
      * @param string $email
      * @param int $listid
      */
@@ -124,5 +130,6 @@ class BouncesController extends Controller
     {
         $result = $this->interspire->bounceSubscriber($email, $listid);
         Log::info('BOUNCE // ' . $email . ' : ' . $result);
+        echo '  - mark ' . $email . ' as bounce says : ' . $result . PHP_EOL;
     }
 }

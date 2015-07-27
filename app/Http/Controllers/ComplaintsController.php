@@ -51,12 +51,15 @@ class ComplaintsController extends Controller
      */
     public function process()
     {
+        echo '-> Amazon SQS pulling message(s)' . PHP_EOL;
         $messages = $this->sqs->receiveMessages($this->complaintsSqsUrl);
 
-        if (!is_null($messages))
+        if (!is_null($messages)) {
+            echo '-> Message(s) received' . PHP_EOL;
             $this->handleMessages($messages);
+        }
 
-        return 'Complaints processed successfully';
+        return 'Complaints processed. Bybye!';
     }
 
     /**
@@ -65,17 +68,21 @@ class ComplaintsController extends Controller
      */
     private function handleMessages($messages)
     {
+        echo '  - Start handling message(s) received' . PHP_EOL;
+
         foreach ($messages as $message) {
             $complaints = json_decode($message['Body']);
 
             foreach ($complaints->complaint->complainedRecipients as $recipient) {
                 $email = $recipient->emailAddress;
                 $this->removeRecipient($email);
-
                 $listids = $this->interspire->getAllListsForEmailAddress($email);
+
                 // if the email is not in any list, we skip
-                if (is_null($listids))
+                if (is_null($listids)) {
+                    echo '  - ' . $email . ' not subscribed to any list' . PHP_EOL;
                     continue;
+                }
 
                 // CAREFUL !!! we want to unsubscribe this email in ALL lists, you might want to change this
                 foreach ($listids as $listid) {
@@ -100,6 +107,7 @@ class ComplaintsController extends Controller
     {
         $result = $this->interspire->addBannedSubscriber($email, $listid);
         Log::info('COMPLAINT // ' . $email . ' BAN : ' . $result);
+        echo '  - ban ' . $email . ' says : ' . $result . PHP_EOL;
     }
 
     /**
@@ -111,6 +119,7 @@ class ComplaintsController extends Controller
     private function unsubscribeRecipient($email, $listid = 1)
     {
         $result = $this->interspire->unsubscribeSubscriber($email, $listid);
-        Log::info('COMPLAINT // ' . $email . ' UNSUB : '.$result);
+        Log::info('COMPLAINT // ' . $email . ' UNSUB : ' . $result);
+        echo '  - unsubscribe ' . $email . ' says : ' . $result . PHP_EOL;
     }
 }
