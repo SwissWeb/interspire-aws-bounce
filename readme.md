@@ -41,17 +41,21 @@ For complaints
 
 ###Usage
 #####To process bounces :
-Go to http://example.com/bounces/process
-
+Go to 
+```
+http://example.com/bounces/process
+```
 or run
 ```
 $ php artisan bounces:process
 ```
 
 #####To process complaints :
-Go to http://example.com/complaints/process
-
-or run
+Go to :
+```
+http://example.com/complaints/process
+```
+or run :
 ```
 $ php artisan complaints:process
 ```
