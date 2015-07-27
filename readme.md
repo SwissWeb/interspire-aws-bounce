@@ -38,3 +38,20 @@ For complaints
 * Create an Amazon SNS topic named ses-complaints-topic.
 * Configure the Amazon SNS topic to publish to the SQS queue.
 * Configure Amazon SES to publish complaint notifications using ses-complaints-topic to ses-complaints-queue.
+
+###Usage
+#####To process bounces :
+Go to http://example.com/bounces/process
+
+or run
+```
+$ php artisan bounces:process
+```
+
+#####To process complaints :
+Go to http://example.com/complaints/process
+
+or run
+```
+$ php artisan complaints:process
+```
