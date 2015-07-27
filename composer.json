@@ -14,7 +14,8 @@
         "php": ">=5.5.9",
         "laravel/framework": "5.1.*",
         "aws/aws-sdk-php-laravel": "~3.0",
-        "swissweb/interspire": "dev-master"
+        "swissweb/interspire": "dev-master",
+        "spatie/laravel-responsecache": "^1.1"
     },
     "require-dev": {
         "fzaninotto/faker": "~1.4",
