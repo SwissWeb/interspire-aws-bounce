@@ -28,6 +28,7 @@
             .content {
                 text-align: center;
                 display: inline-block;
+                font-size: 28px;
             }
 
             .title {
@@ -38,7 +39,10 @@
     <body>
         <div class="container">
             <div class="content">
-                <div class="title">Laravel 5</div>
+                <div class="title"><strong>{{ substr (Request::root(), 7) }}</strong></div>
+                <div class="title">Easy email marketing tool</div>
+                <div class="content"><strong>This service is currently in closed beta only, <br>
+                    Please come back soon...</strong></div>
             </div>
         </div>
     </body>
